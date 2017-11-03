@@ -61,7 +61,6 @@ library
   
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.9 && <4.10
-                     , matrix
                      , vector
                      , random
                      , hmatrix
