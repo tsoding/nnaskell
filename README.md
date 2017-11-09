@@ -3,3 +3,10 @@
 # Nnaskell
 
 Neural Network in Haskell
+
+## Support
+
+You can support my work via
+
+- Twitch channel: https://www.twitch.tv/subs/tsoding
+- Patreon: https://www.patreon.com/tsoding
