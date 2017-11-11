@@ -3,6 +3,8 @@ module Nnaskell ( NN(..)
                 , activateNN
                 , cost
                 , optimizeCost
+                , loadNN
+                , saveNN
                 ) where
 
 import Data.Function
@@ -14,7 +16,7 @@ import Numeric.LinearAlgebra.HMatrix
 
 data NN = NN { nnWs :: [Matrix R]
              , nnBs :: [Vector R]
-             } deriving (Show)
+             } deriving (Show, Read)
 
 randomVec :: Int -> IO (Vector R)
 randomVec n = vector <$> (replicateM n $ randomRIO (-1.0, 1.0))
@@ -92,3 +94,9 @@ optimizeCost cost d = scanl optimizeStep d $ cycle [0 .. n - 1]
     where n = countArgs d
           optimizeStep d idx = minimumBy (compare `on` cost) $ map (stepArg d idx) [-step, 0, step]
           step = 0.1
+
+loadNN :: FilePath -> IO NN
+loadNN filePath = read <$> readFile filePath
+
+saveNN :: FilePath -> NN -> IO ()
+saveNN filePath nn = writeFile filePath $ show nn
