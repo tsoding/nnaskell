@@ -3,15 +3,15 @@ module MNIST ( readLabelsFile
              ) where
 
 import Text.Printf
+import Data.Word
 import qualified Data.ByteString.Lazy as BL
 
-type Image = [Int]
+data Image = Image { imageSize :: (Int, Int)
+                   , imageData :: [Word8]
+                   }
 
 bytesAsInt :: BL.ByteString -> Int
 bytesAsInt = foldl (\a x -> a * 0x100 + x) 0 . map fromIntegral . BL.unpack
-
-parseInt32 :: BL.ByteString -> (Int, BL.ByteString)
-parseInt32 bs = (bytesAsInt $ BL.take 4 bs, BL.drop 4 bs)
 
 magicNumberParser :: Int -> BL.ByteString -> IO BL.ByteString
 magicNumberParser expectedNumber bs
@@ -19,12 +19,14 @@ magicNumberParser expectedNumber bs
     | otherwise = ioError
                   $ userError
                   $ printf "Unexpected magic number: %d. Expected %d." actualNumber expectedNumber
-    where (actualNumber, rest) = parseInt32 bs
+    where actualNumber = bytesAsInt $ BL.take 4 bs
+          rest = BL.drop 4 bs
 
-labelsParser :: BL.ByteString -> IO [Int]
+labelsParser :: BL.ByteString -> IO [Word8]
 labelsParser bs =
-    let (expectedCount, body) = parseInt32 bs
-        labels = map fromIntegral $ BL.unpack body
+    let expectedCount = bytesAsInt $ BL.take 4 bs
+        body = BL.drop 4 bs
+        labels = BL.unpack body
         actualCount = length labels
     in if expectedCount == actualCount
        then return labels
@@ -32,11 +34,27 @@ labelsParser bs =
             $ userError
             $ printf "Unexpected amount of labels. Expected: %d, but got %d" expectedCount actualCount
 
-readLabelsFile :: FilePath -> IO [Int]
+imagesParser :: BL.ByteString -> IO [Image]
+imagesParser bs =
+    let expectedCount = bytesAsInt $ BL.take 4 bs
+        rows = bytesAsInt $ BL.take 4 $ BL.drop 4 bs
+        cols = bytesAsInt $ BL.take 4 $ BL.drop 8 bs
+        body = BL.drop 12 bs
+        actualCount = fromIntegral $ BL.length body
+    in if expectedCount * rows * cols == actualCount
+       then undefined
+       else ioError
+            $ userError
+            $ printf "Unexpected amount of bytes. Expected: %d, but got %d" (expectedCount * rows * cols) actualCount
+
+readLabelsFile :: FilePath -> IO [Word8]
 readLabelsFile fileName =
     BL.readFile fileName
     >>= magicNumberParser 2049
     >>= labelsParser
 
 readImagesFile :: FilePath -> IO [Image]
-readImagesFile = undefined
+readImagesFile fileName =
+    BL.readFile fileName
+    >>= magicNumberParser 2051
+    >>= imagesParser
