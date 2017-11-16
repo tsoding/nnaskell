@@ -69,13 +69,16 @@ chunks _ [] = []
 chunks n xs = take n xs : chunks n (drop n xs)
 
 pixelToChar :: Word8 -> Char
-pixelToChar p
-    | p < 127 = ' '
-    | otherwise = '#'
+pixelToChar p = fst $ head $ dropWhile (\(_, i) -> p > i) pallete
+    where pallete = [ ('░', (255 `div` n))
+                    , ('▒', (255 `div` n) * 2)
+                    , ('▓', (255 `div` n) * 3)
+                    , ('█', 255) ]
+          n = 4
 
 displayImage :: Image -> String
 displayImage image = unlines
-                     $ chunks cols
-                     $ map pixelToChar
+                     $ chunks (2 * cols)
+                     $ concatMap (replicate 2 . pixelToChar)
                      $ imageData image
     where (_, cols) = imageSize image
