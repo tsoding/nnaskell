@@ -42,7 +42,12 @@ imagesParser bs =
         body = BL.drop 12 bs
         actualCount = fromIntegral $ BL.length body
     in if expectedCount * rows * cols == actualCount
-       then undefined
+       then return
+            $ map (\bs -> Image { imageSize = (rows, cols)
+                                , imageData = bs
+                                })
+            $ chunks (rows * cols)
+            $ BL.unpack body
        else ioError
             $ userError
             $ printf "Unexpected amount of bytes. Expected: %d, but got %d" (expectedCount * rows * cols) actualCount
@@ -58,3 +63,7 @@ readImagesFile fileName =
     BL.readFile fileName
     >>= magicNumberParser 2051
     >>= imagesParser
+
+chunks :: Int -> [a] -> [[a]]
+chunks _ [] = []
+chunks n xs = take n xs : chunks n (drop n xs)
