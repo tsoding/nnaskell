@@ -8,7 +8,7 @@ import qualified Data.ByteString.Lazy as BL
 
 data Image = Image { imageSize :: (Int, Int)
                    , imageData :: [Word8]
-                   }
+                   } deriving (Show)
 
 bytesAsInt :: BL.ByteString -> Int
 bytesAsInt = foldl (\a x -> a * 0x100 + x) 0 . map fromIntegral . BL.unpack
@@ -67,3 +67,15 @@ readImagesFile fileName =
 chunks :: Int -> [a] -> [[a]]
 chunks _ [] = []
 chunks n xs = take n xs : chunks n (drop n xs)
+
+pixelToChar :: Word8 -> Char
+pixelToChar p
+    | p < 127 = ' '
+    | otherwise = '#'
+
+displayImage :: Image -> String
+displayImage image = unlines
+                     $ chunks cols
+                     $ map pixelToChar
+                     $ imageData image
+    where (_, cols) = imageSize image
